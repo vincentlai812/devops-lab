@@ -13,11 +13,8 @@ jobs:
       version: ${{ steps.ver.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci && npm test && npm run build
+      - uses: ./.github/actions/setup
+      - run: npm test && npm run build
       - id: ver
         run: echo "version=1.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
       - run: cd dist && zip -qr ../app.zip .
@@ -61,6 +58,18 @@ jobs:
         run: |
           ./scripts/deploy.sh production "$VERSION" app.zip
           ./scripts/smoke-test.sh production
+      - name: 部署摘要
+        if: always()
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+          RESULT: ${{ job.status }}
+        run: |
+          {
+            echo "### Production 部署結果：$RESULT"
+            echo "- 版本：$VERSION"
+            echo "- Commit：$GITHUB_SHA"
+            echo "- 觸發者：$GITHUB_ACTOR"
+          } >> "$GITHUB_STEP_SUMMARY"
  
   release:
     needs: [build, production]
@@ -78,3 +87,21 @@ jobs:
         run: |
           gh release create "v$VERSION" app.zip -R "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" --generate-notes
+ 
+  report:
+    needs: [build, production]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: 建立部署失敗 Issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue create -R "$GITHUB_REPOSITORY" \
+            --title "Production 部署失敗：v$VERSION" \
+            --body "執行紀錄：$RUN_URL" \
+            --label bug
