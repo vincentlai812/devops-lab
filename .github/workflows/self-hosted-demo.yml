@@ -1,0 +1,32 @@
+name: Self-hosted Demo
+on:
+  workflow_dispatch:
+jobs:
+  hello:
+    runs-on: [self-hosted, lab]
+    steps:
+      - uses: actions/checkout@v4
+ 
+      - name: Show environment (Linux / macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          echo "Runner name : $RUNNER_NAME"
+          echo "Runner OS   : $RUNNER_OS"
+          echo "Workspace   : $GITHUB_WORKSPACE"
+          echo "User        : $(whoami)"
+          git --version
+          date >> last-run.txt
+          echo "last-run.txt:" && cat last-run.txt
+ 
+      - name: Show environment (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          Write-Output "Runner name : $env:RUNNER_NAME"
+          Write-Output "Runner OS   : $env:RUNNER_OS"
+          Write-Output "Workspace   : $env:GITHUB_WORKSPACE"
+          Write-Output "User        : $(whoami)"
+          git --version
+          Get-Date | Out-File -Append last-run.txt
+          Get-Content last-run.txt
