@@ -13,7 +13,7 @@ cat > dist/version.txt <<EOF
 name: ${APP_NAME}
 version: ${VERSION}
 commit: ${GITHUB_SHA:-local}
-status: ok
+status: broken
 EOF
 
 echo "[build] ${APP_NAME} ${VERSION} 建置完成"
