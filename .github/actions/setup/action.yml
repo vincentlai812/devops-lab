@@ -1,0 +1,15 @@
+name: Setup project
+description: 安裝 Node.js 並以快取安裝相依套件
+inputs:
+  node-version:
+    description: Node.js 版本
+    default: '22'
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+    - run: npm ci
+      shell: bash
